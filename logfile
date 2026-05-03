@@ -1,0 +1,63 @@
+2026-04-23 14:01:27.401 +07 [7509] LOG:  starting PostgreSQL 16.2 on aarch64-apple-darwin22.1.0, compiled by Apple clang version 14.0.3 (clang-1403.0.22.14.1), 64-bit
+2026-04-23 14:01:27.403 +07 [7509] LOG:  listening on IPv6 address "::1", port 5432
+2026-04-23 14:01:27.403 +07 [7509] LOG:  listening on IPv4 address "127.0.0.1", port 5432
+2026-04-23 14:01:27.403 +07 [7509] LOG:  listening on Unix socket "/tmp/.s.PGSQL.5432"
+2026-04-23 14:01:27.413 +07 [7512] LOG:  database system was shut down at 2026-04-22 19:50:13 +07
+2026-04-23 14:01:27.415 +07 [7509] LOG:  database system is ready to accept connections
+2026-04-23 14:06:27.414 +07 [7510] LOG:  checkpoint starting: time
+2026-04-23 14:07:59.646 +07 [7510] LOG:  checkpoint complete: wrote 915 buffers (5.6%); 0 WAL file(s) added, 0 removed, 0 recycled; write=92.223 s, sync=0.006 s, total=92.233 s; sync files=304, longest=0.001 s, average=0.001 s; distance=4109 kB, estimate=4109 kB; lsn=0/18DDD60, redo lsn=0/18DDD28
+2026-04-23 15:56:19.865 +07 [15099] ERROR:  relation "patients" already exists
+2026-04-23 15:56:19.865 +07 [15099] STATEMENT:  CREATE TABLE patients (
+	  id SERIAL PRIMARY KEY,
+	  name VARCHAR(100),
+	  phone VARCHAR(20),
+	  birthdate DATE,
+	  note TEXT,
+	  image_url TEXT,
+	  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+	);
+2026-04-23 15:56:27.590 +07 [7510] LOG:  checkpoint starting: time
+2026-04-23 15:56:29.431 +07 [7510] LOG:  checkpoint complete: wrote 19 buffers (0.1%); 0 WAL file(s) added, 0 removed, 0 recycled; write=1.834 s, sync=0.003 s, total=1.841 s; sync files=17, longest=0.001 s, average=0.001 s; distance=60 kB, estimate=3704 kB; lsn=0/18ECDD8, redo lsn=0/18ECDA0
+2026-04-23 15:57:07.562 +07 [15099] ERROR:  relation "patients" already exists
+2026-04-23 15:57:07.562 +07 [15099] STATEMENT:  CREATE TABLE patients (
+	  id SERIAL PRIMARY KEY,
+	  name VARCHAR(100),
+	  phone VARCHAR(20),
+	  birthdate DATE,
+	  note TEXT,
+	  image_url TEXT,
+	  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+	);
+2026-04-23 15:57:23.156 +07 [15099] ERROR:  relation "appointments" already exists
+2026-04-23 15:57:23.156 +07 [15099] STATEMENT:  CREATE TABLE appointments (
+	  id SERIAL PRIMARY KEY,
+	  patient_id INT REFERENCES patients(id),
+	  appointment_date TIMESTAMP,
+	  status VARCHAR(20) DEFAULT 'pending',
+	  note TEXT
+	);
+2026-04-23 16:01:27.451 +07 [7510] LOG:  checkpoint starting: time
+2026-04-23 16:01:34.669 +07 [7510] LOG:  checkpoint complete: wrote 72 buffers (0.4%); 0 WAL file(s) added, 0 removed, 0 recycled; write=7.214 s, sync=0.004 s, total=7.219 s; sync files=60, longest=0.001 s, average=0.001 s; distance=294 kB, estimate=3363 kB; lsn=0/1936928, redo lsn=0/19368F0
+2026-04-23 16:16:27.643 +07 [7510] LOG:  checkpoint starting: time
+2026-04-23 16:16:27.853 +07 [7510] LOG:  checkpoint complete: wrote 3 buffers (0.0%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.205 s, sync=0.001 s, total=0.211 s; sync files=3, longest=0.001 s, average=0.001 s; distance=2 kB, estimate=3027 kB; lsn=0/19372D0, redo lsn=0/1937298
+2026-04-23 16:21:27.853 +07 [7510] LOG:  checkpoint starting: time
+2026-04-23 16:21:28.674 +07 [7510] LOG:  checkpoint complete: wrote 9 buffers (0.1%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.815 s, sync=0.002 s, total=0.821 s; sync files=8, longest=0.001 s, average=0.001 s; distance=0 kB, estimate=2724 kB; lsn=0/19375A8, redo lsn=0/1937570
+2026-04-23 16:36:27.690 +07 [7510] LOG:  checkpoint starting: time
+2026-04-23 16:36:27.998 +07 [7510] LOG:  checkpoint complete: wrote 4 buffers (0.0%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.304 s, sync=0.001 s, total=0.309 s; sync files=4, longest=0.001 s, average=0.001 s; distance=0 kB, estimate=2452 kB; lsn=0/1937898, redo lsn=0/1937860
+2026-04-23 18:15:01.600 +07 [36438] ERROR:  insert or update on table "appointments" violates foreign key constraint "appointments_patient_id_fkey"
+2026-04-23 18:15:01.600 +07 [36438] DETAIL:  Key (patient_id)=(1234) is not present in table "patients".
+2026-04-23 18:15:01.600 +07 [36438] STATEMENT:  INSERT INTO appointments (patient_id, appointment_date, note) VALUES ($1,$2,$3) RETURNING *
+2026-04-23 18:19:44.938 +07 [7510] LOG:  checkpoint starting: time
+2026-04-23 18:19:45.962 +07 [7510] LOG:  checkpoint complete: wrote 11 buffers (0.1%); 0 WAL file(s) added, 0 removed, 0 recycled; write=1.018 s, sync=0.002 s, total=1.025 s; sync files=10, longest=0.001 s, average=0.001 s; distance=1 kB, estimate=2207 kB; lsn=0/1937D20, redo lsn=0/1937CE8
+2026-04-23 19:20:40.216 +07 [7510] LOG:  checkpoint starting: time
+2026-04-23 19:20:40.833 +07 [7510] LOG:  checkpoint complete: wrote 7 buffers (0.0%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.612 s, sync=0.002 s, total=0.618 s; sync files=7, longest=0.001 s, average=0.001 s; distance=1 kB, estimate=1986 kB; lsn=0/19382D8, redo lsn=0/19382A0
+2026-04-23 19:25:40.834 +07 [7510] LOG:  checkpoint starting: time
+2026-04-23 19:25:41.145 +07 [7510] LOG:  checkpoint complete: wrote 4 buffers (0.0%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.305 s, sync=0.001 s, total=0.311 s; sync files=4, longest=0.001 s, average=0.001 s; distance=0 kB, estimate=1788 kB; lsn=0/1938658, redo lsn=0/1938620
+2026-04-23 19:35:40.154 +07 [7510] LOG:  checkpoint starting: time
+2026-04-23 19:35:40.464 +07 [7510] LOG:  checkpoint complete: wrote 4 buffers (0.0%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.305 s, sync=0.001 s, total=0.310 s; sync files=4, longest=0.001 s, average=0.001 s; distance=0 kB, estimate=1609 kB; lsn=0/1938A20, redo lsn=0/19389E8
+2026-04-23 19:49:24.097 +07 [7509] LOG:  received smart shutdown request
+2026-04-23 19:49:24.099 +07 [7509] LOG:  background worker "logical replication launcher" (PID 7515) exited with exit code 1
+2026-04-23 19:49:24.099 +07 [7510] LOG:  shutting down
+2026-04-23 19:49:24.100 +07 [7510] LOG:  checkpoint starting: shutdown immediate
+2026-04-23 19:49:24.107 +07 [7510] LOG:  checkpoint complete: wrote 0 buffers (0.0%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.002 s, sync=0.001 s, total=0.008 s; sync files=0, longest=0.000 s, average=0.000 s; distance=0 kB, estimate=1448 kB; lsn=0/1938AD0, redo lsn=0/1938AD0
+2026-04-23 19:49:24.115 +07 [7509] LOG:  database system is shut down
