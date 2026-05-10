@@ -3,6 +3,7 @@
     "@fullcalendar/daygrid": "^6.1.20",
     "@fullcalendar/react": "^6.1.20",
     "@fullcalendar/timegrid": "^6.1.20",
+    "lucide-react": "^0.330.0",
     "multer": "^2.1.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",

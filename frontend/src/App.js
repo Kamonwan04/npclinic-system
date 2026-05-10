@@ -1,15 +1,34 @@
 import { useEffect, useState } from 'react';
-import { HashRouter as Router, Routes, Route, Link, Navigate, useNavigate } from 'react-router-dom';
+import { HashRouter as Router, Routes, Route, Link, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import CalendarPage from './CalendarPage';
 import DashboardPage from './DashboardPage';
 import FollowUpPage from './FollowUpPage'; 
 import PatientProfilePage from './PatientProfilePage'; 
 import LoginPage from './LoginPage';
+import ManagerDashboardPage from './pages/ManagerDashboardPage';
+
+// Import ไอคอนจาก lucide-react
+import { 
+  UserPlus, 
+  Edit3, 
+  Save, 
+  Search, 
+  FileText, 
+  Calendar, 
+  Pencil, 
+  Trash2, 
+  Frown 
+} from 'lucide-react';
 
 const API = 'http://localhost:3001';
 
 // -----------------------
-const isLogin = () => !!localStorage.getItem('token');
+const isLogin = () => {
+  return (
+    localStorage.getItem('token') ||
+    localStorage.getItem('role') === 'manager'
+  );
+};
 
 // -----------------------
 function PrivateRoute({ children }) {
@@ -21,6 +40,25 @@ function AppWrapper() {
     <Router>
       <App />
     </Router>
+  );
+}
+
+// สร้าง Component ย่อยสำหรับเมนูเพื่อให้มีสถานะ Active
+function NavLink({ to, children, className = "" }) {
+  const location = useLocation();
+  const isActive = location.pathname === to || (to !== '/' && location.pathname.startsWith(to));
+  
+  return (
+    <Link 
+      to={to} 
+      className={`px-4 py-2.5 rounded-2xl font-bold transition-all duration-300 ${
+        isActive 
+          ? 'bg-[#C55C6F] text-white shadow-md' 
+          : 'text-[#771126] hover:text-[#501012] hover:bg-[#FCECF0]'
+      } ${className}`}
+    >
+      {children}
+    </Link>
   );
 }
 
@@ -67,7 +105,7 @@ function App() {
   const savePatient = async () => {
 
     if (!name || !phone) {
-      return alert('กรอกชื่อและเบอร์');
+      return alert('[แจ้งเตือน] กรุณากรอกชื่อและเบอร์โทรศัพท์');
     }
 
     const payload = {
@@ -98,7 +136,7 @@ function App() {
         });
       }
 
-      alert('✅ บันทึกแล้ว');
+      alert('[สำเร็จ] บันทึกข้อมูลเรียบร้อยแล้ว');
 
       resetForm();
       fetchPatients();
@@ -124,7 +162,7 @@ function App() {
 
   // -----------------------
   const deletePatient = async (id) => {
-    if (!window.confirm('ยืนยันลบลูกค้า?')) return;
+    if (!window.confirm('[คำเตือน] ยืนยันการลบลูกค้าท่านนี้?')) return;
 
     try {
       await fetch(`${API}/patients/${id}`, {
@@ -149,6 +187,9 @@ function App() {
     setFeeling(p.feeling || '');
     setAllergies(p.allergies || '');
     setConcerns(p.concerns || '');
+    
+    // เลื่อนหน้าจอกลับไปที่ฟอร์มด้านบน
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   // -----------------------
@@ -160,11 +201,13 @@ function App() {
   // -----------------------
   const logout = () => {
     localStorage.removeItem('token');
+    localStorage.removeItem('role');
+
     navigate('/login');
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 py-6 px-4 md:px-8 text-gray-800">
+    <div className="min-h-screen bg-[#FCECF0] py-8 px-4 md:px-8 text-[#303030] font-sans selection:bg-[#e9b9c5] selection:text-[#501012]">
 
       <Routes>
 
@@ -173,118 +216,235 @@ function App() {
         <Route path="/*" element={
           <PrivateRoute>
 
-            <div className="max-w-6xl mx-auto bg-white rounded-2xl shadow border p-6">
+            {/* MAIN APP CONTAINER */}
+            <div className="max-w-6xl mx-auto bg-white rounded-[2.5rem] shadow-lg border-2 border-slate-700 p-6 md:p-10 mb-10">
 
-              {/* NAV */}
-              <div className="flex flex-col md:flex-row justify-between items-center mb-6 border-b pb-4 gap-4">
-                <h1 className="text-2xl font-bold text-[#9c8680]">
-                  NP PRIME CLINIC
-                </h1>
+              {/* NAV BAR */}
+              <div className="flex flex-col xl:flex-row justify-between items-center mb-8 border-b-2 border-[#f5e0df] pb-6 gap-6">
+                
+                {/* LOGO AREA */}
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-[#C55C6F] rounded-xl flex items-center justify-center text-white font-bold text-xl shadow-md transform rotate-3">
+                    NP
+                  </div>
+                  <h1 className="text-2xl md:text-3xl font-extrabold text-[#771126] tracking-tight">
+                    PRIME CLINIC
+                  </h1>
+                </div>
 
-                <div className="flex gap-2 items-center">
-                  <Link to="/" className="px-3 py-2 hover:text-[#9c8680]">📊 Dashboard</Link>
-                  <Link to="/patients" className="px-3 py-2 hover:text-[#9c8680]">👥 ลูกค้า</Link>
-                  <Link to="/calendar" className="px-3 py-2 hover:text-[#9c8680]">📅 นัดหมาย</Link>
-                  <Link to="/followup" className="px-3 py-2 hover:text-[#9c8680]">🔔 ติดตามผล</Link>
+                {/* LINKS AREA */}
+                <div className="flex flex-wrap justify-center gap-2 items-center bg-[#FFF0D9]/30 p-2 rounded-3xl border border-slate-600 shadow-sm">
 
-                  <button onClick={logout} className="text-red-500 ml-2">
-                    🚪 ออก
+                  <NavLink to="/">Dashboard</NavLink>
+                  <NavLink to="/patients">ลูกค้า</NavLink>
+                  <NavLink to="/calendar">นัดหมาย</NavLink>
+                  <NavLink to="/followup">ติดตามผล</NavLink>
+
+                  {localStorage.getItem('role') === 'manager' && (
+                    <NavLink to="/manager" className="!text-[#78A5CE] hover:!bg-[#F5EDEC]">
+                      ค่ามือหมอ
+                    </NavLink>
+                  )}
+
+                  <div className="w-px h-8 bg-[#e9b9c5] mx-1"></div> {/* Divider */}
+
+                  <button 
+                    onClick={logout} 
+                    className="px-5 py-2.5 rounded-2xl font-bold text-[#771126] bg-[#f5e0df] hover:bg-[#e9b9c5] transition-all ml-1 shadow-sm"
+                  >
+                    Logout
                   </button>
+
                 </div>
               </div>
 
-              <Routes>
+              {/* PAGE CONTENT */}
+              <div className="mt-4">
+                <Routes>
+  
+                  <Route path="/" element={<DashboardPage />} />
 
-                <Route path="/" element={<DashboardPage />} />
+                  {/* 👥 PATIENT PAGE */}
+                  <Route path="/patients" element={
+                    <div className="space-y-8">
 
-                {/* 👥 PATIENT PAGE */}
-                <Route path="/patients" element={
-                  <div className="space-y-6">
+                      {/* FORM CARD */}
+                      <div className="bg-white p-8 rounded-3xl shadow-md border-2 border-slate-700 relative overflow-hidden">
+                        
+                        {/* Decoration line */}
+                        <div className="absolute top-0 left-0 w-full h-2 bg-[#C55C6F]"></div>
 
-                    {/* FORM */}
-                    <div className="bg-white p-6 rounded-xl border shadow-sm">
-                      <h2 className="text-lg font-bold mb-4">
-                        {editingId ? '✏️ แก้ไขลูกค้า' : '➕ เพิ่มลูกค้า'}
-                      </h2>
+                        <h2 className="text-2xl font-extrabold mb-6 text-[#771126] flex items-center gap-2">
+                          {editingId ? <><Edit3 className="w-6 h-6" /> แก้ไขข้อมูลลูกค้า</> : <><UserPlus className="w-6 h-6" /> ลงทะเบียนลูกค้าใหม่</>}
+                        </h2>
 
-                      <form onSubmit={(e)=>{e.preventDefault(); savePatient();}} className="grid md:grid-cols-2 gap-3">
+                        <form onSubmit={(e)=>{e.preventDefault(); savePatient();}} className="grid md:grid-cols-2 gap-5">
 
-                        <input placeholder="ชื่อ" value={name} onChange={e => setName(e.target.value)} className="p-2 border rounded" />
-                        <input placeholder="นามสกุล" value={lastname} onChange={e => setLastname(e.target.value)} className="p-2 border rounded" />
+                          <div className="space-y-1">
+                            <label className="text-sm font-bold text-[#771126] ml-2">ชื่อ</label>
+                            <input placeholder="ระบุชื่อ" value={name} onChange={e => setName(e.target.value)} className="w-full bg-white border-2 border-slate-500 text-[#501012] p-3.5 rounded-2xl focus:outline-none focus:ring-2 focus:ring-slate-300 focus:border-slate-700 transition-all placeholder-slate-400" />
+                          </div>
+                          
+                          <div className="space-y-1">
+                            <label className="text-sm font-bold text-[#771126] ml-2">นามสกุล</label>
+                            <input placeholder="ระบุนามสกุล" value={lastname} onChange={e => setLastname(e.target.value)} className="w-full bg-white border-2 border-slate-500 text-[#501012] p-3.5 rounded-2xl focus:outline-none focus:ring-2 focus:ring-slate-300 focus:border-slate-700 transition-all placeholder-slate-400" />
+                          </div>
 
-                        <input placeholder="ชื่อเล่น" value={nickname} onChange={e => setNickname(e.target.value)} className="p-2 border rounded" />
-                        <input placeholder="เบอร์" value={phone} onChange={e => setPhone(e.target.value)} className="p-2 border rounded" />
+                          <div className="space-y-1">
+                            <label className="text-sm font-bold text-[#771126] ml-2">ชื่อเล่น</label>
+                            <input placeholder="ระบุชื่อเล่น" value={nickname} onChange={e => setNickname(e.target.value)} className="w-full bg-white border-2 border-slate-500 text-[#501012] p-3.5 rounded-2xl focus:outline-none focus:ring-2 focus:ring-slate-300 focus:border-slate-700 transition-all placeholder-slate-400" />
+                          </div>
+                          
+                          <div className="space-y-1">
+                            <label className="text-sm font-bold text-[#771126] ml-2">เบอร์โทรศัพท์</label>
+                            <input placeholder="08X-XXX-XXXX" value={phone} onChange={e => setPhone(e.target.value)} className="w-full bg-white border-2 border-slate-500 text-[#501012] p-3.5 rounded-2xl focus:outline-none focus:ring-2 focus:ring-slate-300 focus:border-slate-700 transition-all placeholder-slate-400" />
+                          </div>
 
-                        <input placeholder="ชื่อ-นามสกุล (ฉุกเฉิน)" value={emergencyName} onChange={e => setEmergencyName(e.target.value)} className="p-2 border rounded" />
-                        <input placeholder="เบอร์ฉุกเฉิน" value={emergencyPhone} onChange={e => setEmergencyPhone(e.target.value)} className="p-2 border rounded" />
+                          <div className="space-y-1">
+                            <label className="text-sm font-bold text-[#771126] ml-2">บุคคลติดต่อฉุกเฉิน</label>
+                            <input placeholder="ชื่อ-นามสกุล (ฉุกเฉิน)" value={emergencyName} onChange={e => setEmergencyName(e.target.value)} className="w-full bg-white border-2 border-slate-500 text-[#501012] p-3.5 rounded-2xl focus:outline-none focus:ring-2 focus:ring-slate-300 focus:border-slate-700 transition-all placeholder-slate-400" />
+                          </div>
+                          
+                          <div className="space-y-1">
+                            <label className="text-sm font-bold text-[#771126] ml-2">เบอร์โทรฉุกเฉิน</label>
+                            <input placeholder="เบอร์ฉุกเฉิน" value={emergencyPhone} onChange={e => setEmergencyPhone(e.target.value)} className="w-full bg-white border-2 border-slate-500 text-[#501012] p-3.5 rounded-2xl focus:outline-none focus:ring-2 focus:ring-slate-300 focus:border-slate-700 transition-all placeholder-slate-400" />
+                          </div>
 
-                        <select value={source} onChange={e => setSource(e.target.value)} className="p-2 border rounded">
-                          <option value="">เลือกช่องทาง</option>
-                          <option value="facebook">Facebook</option>
-                          <option value="instagram">Instagram</option>
-                          <option value="tiktok">TikTok</option>
-                          <option value="friend">เพื่อนแนะนำ</option>
-                          <option value="other">อื่นๆ</option>
-                        </select>
+                          <div className="space-y-1">
+                            <label className="text-sm font-bold text-[#771126] ml-2">รู้จักคลินิกผ่านช่องทางใด</label>
+                            <select value={source} onChange={e => setSource(e.target.value)} className="w-full bg-white border-2 border-slate-500 text-[#501012] p-3.5 rounded-2xl focus:outline-none focus:ring-2 focus:ring-slate-300 focus:border-slate-700 transition-all appearance-none">
+                              <option value="">เลือกช่องทาง</option>
+                              <option value="facebook">Facebook</option>
+                              <option value="instagram">Instagram</option>
+                              <option value="tiktok">TikTok</option>
+                              <option value="friend">เพื่อนแนะนำ</option>
+                              <option value="other">อื่นๆ</option>
+                            </select>
+                          </div>
 
-                        <textarea placeholder="ความรู้สึก" value={feeling} onChange={e => setFeeling(e.target.value)} className="p-2 border rounded" />
+                          <div className="space-y-1">
+                            <label className="text-sm font-bold text-[#771126] ml-2">ความกังวล / ปัญหาที่ต้องการแก้</label>
+                            <select value={concerns} onChange={e => setConcerns(e.target.value)} className="w-full bg-white border-2 border-slate-500 text-[#501012] p-3.5 rounded-2xl focus:outline-none focus:ring-2 focus:ring-slate-300 focus:border-slate-700 transition-all appearance-none">
+                              <option value="">เลือกปัญหา</option>
+                              <option>สิว</option>
+                              <option>ฝ้า / กระ</option>
+                              <option>ปรับรูปหน้า / โบท็อกซ์ / ฟิลเลอร์</option>
+                              <option>ทรีทเม้นท์ผิวหน้า</option>
+                            </select>
+                          </div>
 
-                        <input placeholder="แพ้ยา" value={allergies} onChange={e => setAllergies(e.target.value)} className="p-2 border rounded" />
+                          <div className="space-y-1 md:col-span-2">
+                            <label className="text-sm font-bold text-[#771126] ml-2">ประวัติการแพ้ยา</label>
+                            <input placeholder="ระบุประวัติแพ้ยา (ถ้าไม่มีให้เว้นว่าง)" value={allergies} onChange={e => setAllergies(e.target.value)} className="w-full bg-white border-2 border-rose-500 text-[#771126] p-3.5 rounded-2xl focus:outline-none focus:ring-2 focus:ring-rose-300 focus:border-rose-700 transition-all placeholder-rose-300" />
+                          </div>
 
-                        <select value={concerns} onChange={e => setConcerns(e.target.value)} className="p-2 border rounded">
-                          <option value="">เลือกปัญหา</option>
-                          <option>สิว</option>
-                          <option>ฝ้า</option>
-                          <option>ปรับรูปหน้า</option>
-                        </select>
+                          <div className="space-y-1 md:col-span-2">
+                            <label className="text-sm font-bold text-[#771126] ml-2">หมายเหตุเพิ่มเติม</label>
+                            <textarea placeholder="ความรู้สึก หรือ รายละเอียดอื่นๆ..." value={feeling} onChange={e => setFeeling(e.target.value)} className="w-full bg-white border-2 border-slate-500 text-[#501012] p-3.5 rounded-2xl focus:outline-none focus:ring-2 focus:ring-slate-300 focus:border-slate-700 transition-all min-h-[100px]" />
+                          </div>
 
-                        <button className="md:col-span-2 bg-[#9c8680] text-white py-2 rounded">
-                          {editingId ? 'อัปเดต' : 'บันทึก'}
-                        </button>
+                          {/* ACTION BUTTONS */}
+                          <div className="md:col-span-2 flex gap-3 mt-4">
+                            {editingId && (
+                              <button 
+                                type="button" 
+                                onClick={resetForm}
+                                className="w-1/3 flex items-center justify-center gap-2 bg-[#f5e0df] text-[#771126] border border-[#e9b9c5] py-4 rounded-2xl font-bold hover:bg-[#e9b9c5] transition-all shadow-sm"
+                              >
+                                ยกเลิก
+                              </button>
+                            )}
+                            <button className={`flex items-center justify-center gap-2 bg-[#C55C6F] hover:bg-[#771126] text-white py-4 rounded-2xl font-extrabold text-lg shadow-md hover:shadow-lg transition-all transform hover:-translate-y-0.5 ${editingId ? 'w-2/3' : 'w-full'}`}>
+                              <Save className="w-5 h-5" /> {editingId ? 'อัปเดตข้อมูล' : 'บันทึกข้อมูลลูกค้า'}
+                            </button>
+                          </div>
 
-                      </form>
+                        </form>
+                      </div>
+
+                      {/* SEARCH BARS */}
+                      <div className="relative">
+                        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                          <Search className="w-5 h-5 text-[#C55C6F]" />
+                        </div>
+                        <input
+                          placeholder="ค้นหาชื่อ หรือ เบอร์โทรศัพท์..."
+                          value={search}
+                          onChange={(e)=>setSearch(e.target.value)}
+                          className="w-full bg-white border-2 border-slate-700 text-[#501012] p-4 pl-12 rounded-2xl focus:outline-none focus:ring-2 focus:ring-slate-300 focus:border-slate-800 transition-all shadow-sm font-medium placeholder-slate-400"
+                        />
+                      </div>
+
+                      {/* PATIENT TABLE */}
+                      <div className="bg-white rounded-3xl shadow-md border-2 border-slate-700 overflow-hidden">
+                        <div className="overflow-x-auto">
+                          <table className="w-full text-left border-collapse whitespace-nowrap">
+                            <thead className="bg-slate-50 border-b-2 border-slate-500">
+                              <tr>
+                                <th className="p-4 text-slate-800 font-bold">ชื่อลูกค้า</th>
+                                <th className="p-4 text-slate-800 font-bold">เบอร์โทรศัพท์</th>
+                                <th className="p-4 text-slate-800 font-bold text-center">จัดการ</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {filtered.length > 0 ? filtered.map(p => (
+                                <tr key={p.id} className="border-b border-slate-300 last:border-0 hover:bg-slate-100 transition-colors">
+                                  <td className="p-4 font-bold text-[#501012]">
+                                    {p.name} {p.lastname}
+                                    {p.nickname && <span className="ml-2 text-sm text-[#C55C6F] font-normal">({p.nickname})</span>}
+                                  </td>
+                                  <td className="p-4 text-slate-700 font-medium">{p.phone}</td>
+
+                                  <td className="p-4 text-center flex items-center justify-center gap-2">
+                                    <Link to={`/patient/${p.id}`} title="ดูประวัติ" className="flex items-center gap-1.5 bg-[#78A5CE] text-white hover:bg-[#628eb5] px-3 py-2 rounded-xl transition-all shadow-sm font-medium">
+                                      <FileText className="w-4 h-4" /> ประวัติ
+                                    </Link>
+                                    <Link to={`/calendar?patient=${p.id}`} title="นัดหมาย" className="flex items-center gap-1.5 bg-[#DDA4B4] text-white hover:bg-[#C55C6F] px-3 py-2 rounded-xl transition-all shadow-sm font-medium">
+                                      <Calendar className="w-4 h-4" /> นัดหมาย
+                                    </Link>
+                                    <button onClick={()=>editPatient(p)} title="แก้ไข" className="flex items-center gap-1.5 bg-[#FFF0D9] text-[#7C5549] hover:bg-[#ebd8bd] px-3 py-2 rounded-xl transition-all shadow-sm font-medium">
+                                      <Pencil className="w-4 h-4" /> แก้ไข
+                                    </button>
+                                    <button onClick={()=>deletePatient(p.id)} title="ลบ" className="flex items-center gap-1.5 bg-[#771126] text-white hover:bg-[#501012] px-3 py-2 rounded-xl transition-all shadow-sm font-medium">
+                                      <Trash2 className="w-4 h-4" /> ลบ
+                                    </button>
+                                  </td>
+                                </tr>
+                              )) : (
+                                <tr>
+                                  <td colSpan="3" className="p-8 text-center text-[#771126] font-medium">
+                                    <div className="flex flex-col items-center justify-center">
+                                      <Frown className="w-8 h-8 mb-2 text-[#C55C6F]" />
+                                      ไม่พบข้อมูลลูกค้า
+                                    </div>
+                                  </td>
+                                </tr>
+                              )}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+
                     </div>
+                  } />
 
-                    {/* SEARCH */}
-                    <input
-                      placeholder="🔍 ค้นหา"
-                      value={search}
-                      onChange={(e)=>setSearch(e.target.value)}
-                      className="w-full p-2 border rounded"
-                    />
+                  <Route path="/calendar" element={<CalendarPage />} />
+                  <Route path="/patient/:id" element={<PatientProfilePage />} />
+                  <Route path="/followup" element={<FollowUpPage />} />
+                  <Route path="/followup/:id" element={<FollowUpPage />} />
+                  <Route
+                    path="/manager"
+                    element={
+                      localStorage.getItem('role') === 'manager'
+                        ? <ManagerDashboardPage />
+                        : <Navigate to="/" />
+                    }
+                  />
 
-                    {/* TABLE */}
-                    <div className="bg-white rounded-xl border overflow-hidden">
-                      <table className="w-full">
-                        <tbody>
-                          {filtered.map(p => (
-                            <tr key={p.id} className="border-t">
-                              <td className="p-2">{p.name}</td>
-                              <td className="p-2">{p.phone}</td>
+                  <Route path="*" element={<Navigate to="/" />} />
 
-                              <td className="p-2 text-right space-x-2">
-                                <button onClick={()=>editPatient(p)} className="bg-yellow-400 px-2 py-1 rounded">✏️</button>
-                                <button onClick={()=>deletePatient(p.id)} className="bg-red-500 text-white px-2 py-1 rounded">🗑</button>
-                                <Link to={`/patient/${p.id}`} className="bg-blue-500 text-white px-2 py-1 rounded">📄</Link>
-                                <Link to={`/calendar?patient=${p.id}`} className="bg-[#9c8680] text-white px-2 py-1 rounded">📅</Link>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-
-                  </div>
-                } />
-
-                <Route path="/calendar" element={<CalendarPage />} />
-                <Route path="/patient/:id" element={<PatientProfilePage />} />
-                <Route path="/followup" element={<FollowUpPage />} />
-                <Route path="/followup/:id" element={<FollowUpPage />} />
-
-                <Route path="*" element={<Navigate to="/" />} />
-
-              </Routes>
+                </Routes>
+              </div>
 
             </div>
 

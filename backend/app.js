@@ -1,4 +1,5 @@
 const express = require('express');
+
 const cors = require('cors');
 const db = require('./db'); 
 
@@ -8,27 +9,212 @@ app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
-// ------------------------------------
+/// ------------------------------------
 // 🔐 LOGIN
 // ------------------------------------
-const USER = {
-  username: 'admin',
-  password: 'NP999999999'
-};
+const USERS = [
+  {
+    username: 'admin',
+    password: 'NP999999999',
+    role: 'admin'
+  },
+  {
+    username: 'npprime',
+    password: 'NPNP99999',
+    role: 'manager'
+  }
+];
 
 app.post('/login', (req, res) => {
+
   const { username, password } = req.body || {};
 
-  if (username === USER.username && password === USER.password) {
-    return res.json({ success: true, token: 'npclinic-token' });
+  const user = USERS.find(
+    u =>
+      u.username === username &&
+      u.password === password
+  );
+
+  if (user) {
+    return res.json({
+      success: true,
+      token: 'npclinic-token',
+      role: user.role
+    });
   }
 
-  return res.status(401).json({ success: false });
+  return res.status(401).json({
+    success: false
+  });
+
 });
 
 // ------------------------------------
 app.get('/', (req, res) => {
   res.send('NP PRIME CLINIC API RUNNING');
+});
+
+app.get('/doctor-income', async (req, res) => {
+
+  try {
+
+    const result = await db.query(`
+      SELECT *
+      FROM doctor_income
+      ORDER BY id DESC
+    `);
+
+    const rows = [];
+
+    for (const r of result.rows) {
+
+      const itemsResult = await db.query(
+        `
+        SELECT
+          procedure_name,
+          sales,
+          df_percent,
+          df_amount
+        FROM doctor_income_items
+        WHERE income_id = $1
+        `,
+        [r.id]
+      );
+
+      rows.push({
+        ...r,
+
+        items: itemsResult.rows.map(item => ({
+          procedure: item.procedure_name,
+          sales: item.sales,
+          percent: item.df_percent,
+          df: item.df_amount
+        }))
+      });
+    }
+
+    res.json(rows);
+
+  } catch (err) {
+
+    console.error(err);
+
+    res.status(500).json({
+      error: 'server error'
+    });
+
+  }
+
+});
+
+// ------------------------------------
+// 💾 SAVE DOCTOR INCOME
+// ------------------------------------
+
+app.post('/doctor-income', async (req, res) => {
+
+  try {
+
+    const {
+      doctor_name,
+      date,
+      time_start,
+      time_end,
+      hour_rate,
+      hours,
+      total_hr,
+      total_df,
+      dfhr,
+      wht,
+      doctor_receive,
+      total_sales,
+      items
+    } = req.body;
+
+    // 🔥 save main
+    const result = await db.query(
+      `
+      INSERT INTO doctor_income (
+        doctor_name,
+        date,
+        time_start,
+        time_end,
+        hour_rate,
+        hours,
+        total_hr,
+        total_df,
+        dfhr,
+        wht,
+        doctor_receive,
+        total_sales
+      )
+      VALUES (
+        $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12
+      )
+      RETURNING id
+      `,
+      [
+        doctor_name,
+        date,
+        time_start,
+        time_end,
+        hour_rate,
+        hours,
+        total_hr,
+        total_df,
+        dfhr,
+        wht,
+        doctor_receive,
+        total_sales
+      ]
+    );
+
+    const incomeId = result.rows[0].id;
+
+    // 🔥 save items
+    for (const item of items) {
+
+      const sales = Number(item.sales || 0);
+      const percent = Number(item.percent || 0);
+
+      const df =
+        sales * percent / 100;
+
+      await db.query(
+        `
+        INSERT INTO doctor_income_items (
+          income_id,
+          procedure_name,
+          sales,
+          df_percent,
+          df_amount
+        )
+        VALUES ($1,$2,$3,$4,$5)
+        `,
+        [
+          incomeId,
+          item.procedure,
+          sales,
+          percent,
+          df
+        ]
+      );
+    }
+
+    res.json({
+      success: true
+    });
+
+  } catch (err) {
+
+    console.error(err);
+
+    res.status(500).json({
+      success: false
+    });
+
+  }
+
 });
 
 // ------------------------------------
@@ -41,7 +227,6 @@ app.get('/sales-summary', async (req, res) => {
       FROM payments
       WHERE created_at >= CURRENT_DATE
     `);
-
     const monthly = await db.query(`
       SELECT COALESCE(SUM(amount),0) AS total
       FROM payments
@@ -245,11 +430,15 @@ app.post('/records', async (req, res) => {
 // 📅 APPOINTMENTS
 // ------------------------------------
 app.get('/appointments', async (req, res) => {
+
   const result = await db.query(`
     SELECT 
       a.id,
       a.patient_id,
+
       p.name,
+      p.phone,
+
       a.appointment_date,
       a.end_date,
       a.note,
@@ -263,11 +452,14 @@ app.get('/appointments', async (req, res) => {
       ), 0) AS total_paid
 
     FROM appointments a
-    LEFT JOIN patients p ON a.patient_id = p.id
+    LEFT JOIN patients p 
+      ON a.patient_id = p.id
+
     ORDER BY a.appointment_date ASC;
   `);
 
   res.json(result.rows);
+
 });
 
 
@@ -291,8 +483,20 @@ app.post('/payments', async (req, res) => {
 });
 
 app.get('/payments', async (req, res) => {
-  const result = await db.query('SELECT * FROM payments');
-  res.json(result.rows);
+  try {
+
+    const result = await db.query(`
+      SELECT *
+      FROM payments
+      ORDER BY id DESC
+    `);
+
+    res.json(result.rows);
+
+  } catch (err) {
+    console.log(err);
+    res.status(500).json([]);
+  }
 });
 
 // CREATE
@@ -396,7 +600,7 @@ app.post('/appointments/followup-auto', async (req, res) => {
     const end = new Date(start);
     end.setHours(start.getHours() + 1);
 
-    await db.query(
+    await pool.query(
       `INSERT INTO appointments 
        (patient_id, appointment_date, end_date, note, type, followup_status) 
        VALUES ($1,$2,$3,$4,'followup','pending')`,
@@ -407,7 +611,31 @@ app.post('/appointments/followup-auto', async (req, res) => {
   res.json({ success: true });
 });
 
+// =============================
+// DF RECORDS
+// =============================
 
+let dfRecords = [];
+
+app.get('/df-records', (req, res) => {
+  res.json(dfRecords);
+});
+
+app.post('/df-records', (req, res) => {
+
+  const data = {
+    id: Date.now(),
+    ...req.body,
+    created_at: new Date()
+  };
+
+  dfRecords.unshift(data);
+
+  res.json({
+    success: true
+  });
+
+});
 // ------------------------------------
 app.listen(3001, () => {
   console.log('✅ Server running on port 3001');

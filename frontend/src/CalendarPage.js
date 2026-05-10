@@ -3,6 +3,14 @@ import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
+import { 
+  PhoneCall, 
+  Search, 
+  CalendarPlus, 
+  ClipboardList, 
+  Trash2,
+  Users
+} from 'lucide-react';
 
 const API = 'http://localhost:3001';
 
@@ -41,8 +49,9 @@ function CalendarPage() {
       title: `${item.name || ''} - ${item.note || ''}`,
       start: item.appointment_date,
       end: item.end_date || item.appointment_date,
-      backgroundColor: item.type === 'followup' ? '#9c8680' : '#E91E63',
-      borderColor: item.type === 'followup' ? '#9c8680' : '#E91E63',
+      // สี Event ในปฏิทิน: ชมพูตุ่น(#C55C6F) นัดปกติ, แดงมารูน(#771126) ติดตามผล
+      backgroundColor: item.type === 'followup' ? '#771126' : '#C55C6F',
+      borderColor: item.type === 'followup' ? '#501012' : '#C55C6F',
       extendedProps: {
         patient_id: item.patient_id,
         type: item.type,
@@ -89,54 +98,52 @@ function CalendarPage() {
   // -----------------------
   // เพิ่มนัด
   // -----------------------
-const handleAddEvent = async (e) => {
-  e.preventDefault();
+  const handleAddEvent = async (e) => {
+    e.preventDefault();
 
-  if (!selectedPatient) return alert("เลือกคนไข้");
+    if (!selectedPatient) return alert("เลือกคนไข้");
 
-  const start = new Date(`${date}T${startTime}`);
-  const end = new Date(`${date}T${endTime}`);
+    const start = new Date(`${date}T${startTime}`);
+    const end = new Date(`${date}T${endTime}`);
 
-  if (isOverlapping(start, end)) {
-    return alert("❌ เวลาซ้อน");
-  }
-
-  try {
-    const res = await fetch(`${API}/appointments`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        patient_id: selectedPatient,
-        appointment_date: start.toISOString(),
-        end_date: end.toISOString(),
-        note: service,
-        type: 'normal'
-      }),
-    });
-
-    const data = await res.json();
-
-    if (data.error) {
-      return alert(data.error);
+    if (isOverlapping(start, end)) {
+      return alert("❌ เวลาซ้อน");
     }
 
-    // ✅ แจ้งเตือน
-    alert("✅ เพิ่มนัดแล้ว");
+    try {
+      const res = await fetch(`${API}/appointments`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          patient_id: selectedPatient,
+          appointment_date: start.toISOString(),
+          end_date: end.toISOString(),
+          note: service,
+          type: 'normal'
+        }),
+      });
 
-    // ✅ เคลียร์ฟอร์ม
-    setSelectedPatient('');
-    setPatientSearch('');
-    setService('');
-    setDate('');
-    setStartTime('11:00');
-    setEndTime('12:00');
+      const data = await res.json();
 
-    fetchData();
+      if (data.error) {
+        return alert(data.error);
+      }
 
-  } catch (err) {
-    console.error(err);
-  }
-};
+      alert("✅ เพิ่มนัดแล้ว");
+
+      setSelectedPatient('');
+      setPatientSearch('');
+      setService('');
+      setDate('');
+      setStartTime('11:00');
+      setEndTime('12:00');
+
+      fetchData();
+
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   // -----------------------
   // ลบ
@@ -182,47 +189,66 @@ const handleAddEvent = async (e) => {
   return (
     <div className="space-y-6">
 
-      {/* HEADER */}
-      <div className="bg-[#c1acab] text-white p-4 rounded-xl font-bold text-lg shadow">
-        📞 วันนี้ต้องติดตาม {todayFollowups} คน
+      {/* HEADER: โทนสว่าง คลีนๆ สไตล์คลินิก */}
+      <div className="bg-[#F5EDEC] text-[#771126] border-2 border-[#771126]/20 p-5 rounded-2xl font-bold text-lg flex items-center gap-4">
+        <div className="bg-[#C55C6F] p-2.5 rounded-xl text-white shadow-sm">
+          <PhoneCall className="w-6 h-6" />
+        </div>
+        วันนี้ต้องติดตามผลทั้งหมด {todayFollowups} คน
       </div>
 
       {/* SEARCH */}
-      <input
-        placeholder="🔍 ค้นหานัด"
-        value={search}
-        onChange={(e)=>setSearch(e.target.value)}
-        className="w-full p-3 rounded-xl bg-gray-100 border"
-      />
+      <div className="relative group">
+        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+          <Search className="w-5 h-5 text-slate-400 group-focus-within:text-[#C55C6F] transition-colors" />
+        </div>
+        <input
+          placeholder="ค้นหานัดหมายในระบบ..."
+          value={search}
+          onChange={(e)=>setSearch(e.target.value)}
+          className="w-full pl-11 pr-4 py-3.5 rounded-xl bg-white border border-slate-400 focus:outline-none focus:border-[#C55C6F] focus:ring-1 focus:ring-[#C55C6F] transition-all text-[#303030] font-medium placeholder-slate-400"
+        />
+      </div>
 
       {/* RESULT SEARCH */}
       {search && (
-        <div className="bg-white border rounded-xl p-3">
-          {filteredEvents.map(e => (
-            <div key={e.id} className="text-sm border-b py-2">
+        <div className="bg-white border border-slate-300 rounded-xl p-2 shadow-lg max-h-60 overflow-y-auto">
+          {filteredEvents.length > 0 ? filteredEvents.map(e => (
+            <div key={e.id} className="text-sm border-b border-slate-100 p-3 font-medium text-[#303030] hover:bg-[#F5EDEC] hover:text-[#771126] rounded-lg cursor-pointer transition-colors last:border-0">
               {e.title}
             </div>
-          ))}
+          )) : <div className="text-sm text-slate-400 py-4 text-center">ไม่พบผลลัพธ์ที่ค้นหา</div>}
         </div>
       )}
 
-      {/* FORM */}
-      <form onSubmit={handleAddEvent} className="bg-white p-4 rounded-xl border shadow space-y-2">
+      {/* FORM: ดีไซน์ขอบชัด Label แดงมารูนเหมือนรูป UI */}
+      <form onSubmit={handleAddEvent} className="bg-white p-7 rounded-2xl border-2 border-[#303030] space-y-6">
+        
+        <h2 className="font-extrabold text-xl pb-2 border-b-2 border-slate-100 mb-6 flex items-center gap-2 text-[#771126]">
+          <CalendarPlus className="w-6 h-6" strokeWidth={2.5} />
+          เพิ่มนัดหมายใหม่
+        </h2>
 
         {/* dropdown */}
         <div className="relative">
-          <input
-            placeholder="ค้นหาลูกค้า"
-            value={patientSearch}
-            onChange={(e)=>{
-              setPatientSearch(e.target.value);
-              setShowDropdown(true);
-            }}
-            className="border p-2 w-full"
-          />
+          <label className="block text-sm font-bold text-[#771126] mb-2">ชื่อ - นามสกุลลูกค้า</label>
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+              <Users className="w-5 h-5 text-slate-400" />
+            </div>
+            <input
+              placeholder="ระบุชื่อเพื่อค้นหา"
+              value={patientSearch}
+              onChange={(e)=>{
+                setPatientSearch(e.target.value);
+                setShowDropdown(true);
+              }}
+              className="border border-slate-400 bg-white p-3 pl-11 w-full rounded-xl focus:outline-none focus:border-[#C55C6F] focus:ring-1 focus:ring-[#C55C6F] transition-all font-medium text-[#303030] placeholder-slate-400"
+            />
+          </div>
 
           {showDropdown && (
-            <div className="absolute bg-white border w-full max-h-40 overflow-y-auto rounded shadow z-50">
+            <div className="absolute top-[80px] left-0 bg-white border border-slate-300 w-full max-h-48 overflow-y-auto rounded-xl shadow-xl z-50 p-2">
               {filteredPatients.map(p => (
                 <div
                   key={p.id}
@@ -231,7 +257,7 @@ const handleAddEvent = async (e) => {
                     setPatientSearch(p.name);
                     setShowDropdown(false);
                   }}
-                  className="p-2 hover:bg-gray-100 cursor-pointer"
+                  className="p-3 hover:bg-[#F5EDEC] hover:text-[#771126] rounded-lg cursor-pointer font-bold text-[#303030] transition-colors"
                 >
                   {p.name}
                 </div>
@@ -240,27 +266,54 @@ const handleAddEvent = async (e) => {
           )}
         </div>
 
-        <input
-          placeholder="หัตถการ"
-          value={service}
-          onChange={(e)=>setService(e.target.value)}
-          className="border p-2 w-full"
-        />
-
-        <input type="date" value={date} onChange={(e)=>setDate(e.target.value)} className="border p-2 w-full"/>
-
-        <div className="flex gap-2">
-          <input type="time" value={startTime} onChange={(e)=>setStartTime(e.target.value)} className="border p-2 w-full"/>
-          <input type="time" value={endTime} onChange={(e)=>setEndTime(e.target.value)} className="border p-2 w-full"/>
+        <div>
+          <label className="block text-sm font-bold text-[#771126] mb-2">หัตถการ / บริการ</label>
+          <input
+            placeholder="เช่น โบท็อกซ์, เลเซอร์, ทรีตเมนต์"
+            value={service}
+            onChange={(e)=>setService(e.target.value)}
+            className="border border-slate-400 bg-white p-3 w-full rounded-xl focus:outline-none focus:border-[#C55C6F] focus:ring-1 focus:ring-[#C55C6F] transition-all font-medium text-[#303030] placeholder-slate-400"
+          />
         </div>
 
-        <button className="bg-[#9c8680] text-white w-full py-2 rounded">
-          ➕ เพิ่มนัด
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div>
+            <label className="block text-sm font-bold text-[#771126] mb-2">วันที่นัดหมาย</label>
+            <input 
+              type="date" 
+              value={date} 
+              onChange={(e)=>setDate(e.target.value)} 
+              className="border border-slate-400 bg-white p-3 w-full rounded-xl focus:outline-none focus:border-[#C55C6F] focus:ring-1 focus:ring-[#C55C6F] transition-all font-medium text-[#303030]"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-bold text-[#771126] mb-2">ช่วงเวลา</label>
+            <div className="flex gap-2 items-center">
+              <input 
+                type="time" 
+                value={startTime} 
+                onChange={(e)=>setStartTime(e.target.value)} 
+                className="border border-slate-400 bg-white p-3 w-full rounded-xl focus:outline-none focus:border-[#C55C6F] focus:ring-1 focus:ring-[#C55C6F] transition-all font-medium text-[#303030]"
+              />
+              <span className="font-bold text-slate-400">-</span>
+              <input 
+                type="time" 
+                value={endTime} 
+                onChange={(e)=>setEndTime(e.target.value)} 
+                className="border border-slate-400 bg-white p-3 w-full rounded-xl focus:outline-none focus:border-[#C55C6F] focus:ring-1 focus:ring-[#C55C6F] transition-all font-medium text-[#303030]"
+              />
+            </div>
+          </div>
+        </div>
+
+        <button className="bg-[#C55C6F] hover:bg-[#771126] text-white font-bold w-full py-4 rounded-xl transition-all mt-2 text-lg shadow-sm">
+          บันทึกนัดหมาย
         </button>
       </form>
 
       {/* CALENDAR */}
-      <div className="bg-white p-4 rounded-xl border h-[600px] shadow relative z-0">
+      <div className="bg-white p-6 rounded-2xl border-2 border-[#303030] h-[600px] relative z-0">
         <FullCalendar
           plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
           initialView="timeGridWeek"
@@ -276,25 +329,35 @@ const handleAddEvent = async (e) => {
       {/* MODAL */}
       {selectedEvent && (
           <div 
-            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+            className="fixed inset-0 bg-[#303030]/60 backdrop-blur-sm flex items-center justify-center z-[100]"
             onClick={() => setSelectedEvent(null)}
           >
             <div 
-              className="bg-white p-6 rounded-xl w-full max-w-md space-y-2 relative z-50"
+              className="bg-white p-8 rounded-2xl border-2 border-[#303030] w-full max-w-md space-y-6 relative z-50 shadow-2xl transform transition-all"
               onClick={(e)=>e.stopPropagation()}
             >
 
-            <h3 className="font-bold text-lg">📋 รายละเอียด</h3>
+            <h3 className="font-extrabold text-xl text-[#771126] border-b-2 border-slate-100 pb-4 flex items-center gap-2">
+              <ClipboardList className="w-6 h-6" strokeWidth={2.5} />
+              รายละเอียดนัดหมาย
+            </h3>
 
-            <p>{selectedEvent.title}</p>
+            <div className="bg-[#F5EDEC] p-5 rounded-xl border border-[#C55C6F]/30">
+              <p className="font-bold text-lg text-[#303030]">{selectedEvent.title}</p>
+              <p className="text-sm font-medium text-[#771126] mt-2">
+                ประเภท: {selectedEvent.extendedProps.type === 'followup' ? 'ติดตามผล' : 'นัดหมายปกติ'}
+              </p>
+            </div>
 
-            <button onClick={createFollowup} className="bg-blue-500 text-white w-full py-2 rounded">
-              📞 ติดตามผล
-            </button>
+            <div className="flex gap-3 pt-2">
+              <button onClick={createFollowup} className="flex items-center justify-center gap-2 bg-[#771126] hover:bg-[#501012] text-white font-bold w-full py-3.5 rounded-xl transition-all">
+                <PhoneCall className="w-5 h-5" /> สร้างนัดติดตาม
+              </button>
 
-            <button onClick={handleDelete} className="bg-red-500 text-white w-full py-2 rounded">
-              🗑 ลบ
-            </button>
+              <button onClick={handleDelete} className="flex items-center justify-center gap-2 bg-white border border-slate-400 hover:bg-[#303030] hover:text-white text-[#303030] font-bold w-full py-3.5 rounded-xl transition-all group">
+                <Trash2 className="w-5 h-5 group-hover:text-white text-slate-500" /> ลบ
+              </button>
+            </div>
 
           </div>
         </div>
