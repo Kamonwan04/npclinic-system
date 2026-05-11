@@ -254,8 +254,25 @@ app.get('/sales-summary', async (req, res) => {
 // 👥 PATIENTS
 // ------------------------------------
 app.get('/patients', async (req, res) => {
-  const result = await db.query('SELECT * FROM patients ORDER BY id DESC');
-  res.json(result.rows);
+
+  try {
+
+    const result = await db.query(
+      'SELECT * FROM patients ORDER BY id DESC'
+    );
+
+    res.json(result.rows);
+
+  } catch (err) {
+
+    console.error(err);
+
+    res.status(500).json({
+      error: 'โหลดข้อมูลลูกค้าไม่สำเร็จ'
+    });
+
+  }
+
 });
 
 app.post('/patients', async (req, res) => {
@@ -396,8 +413,11 @@ app.get('/patients/:id', async (req, res) => {
 
     appointments: appointments.rows.map(a => ({
       id: a.id,
-      date: new Date(a.appointment_date).toLocaleString('th-TH'),
-      note: a.note
+      appointment_date: a.appointment_date,
+      end_date: a.end_date,
+      note: a.note,
+      type: a.type,
+      followup_status: a.followup_status
     }))
   });
 });
@@ -600,7 +620,7 @@ app.post('/appointments/followup-auto', async (req, res) => {
     const end = new Date(start);
     end.setHours(start.getHours() + 1);
 
-    await pool.query(
+    await db.query(
       `INSERT INTO appointments 
        (patient_id, appointment_date, end_date, note, type, followup_status) 
        VALUES ($1,$2,$3,$4,'followup','pending')`,

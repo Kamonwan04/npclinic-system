@@ -104,7 +104,7 @@ function LoginPage() {
           disabled={loading}
           className="w-full bg-[#C55C6F] hover:bg-[#771126] text-white font-black py-4 rounded-2xl shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-1 text-lg disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none mt-4 border-b-4 border-black/20"
         >
-          {loading ? 'กำลังเข้าสู่ระบบ ⏳...' : 'เข้าสู่ระบบ 🚀'}
+          {loading ? 'กำลังเข้าสู่ระบบ ⏳...' : 'เข้าสู่ระบบ'}
         </button>
 
       </form>

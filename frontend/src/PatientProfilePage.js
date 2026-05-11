@@ -139,8 +139,8 @@ function PatientProfilePage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           patient_id: id,
-          appointment_date: start.toISOString(),
-          end_date: end.toISOString(),
+          appointment_date: start,
+          end_date: end,
           note: nextNote
         })
       });
@@ -254,17 +254,32 @@ function PatientProfilePage() {
             {patient.appointments.length === 0 && <p className="text-slate-400 text-sm text-center py-4 bg-slate-50 rounded-xl">ไม่มีนัดหมายในระบบ</p>}
 
             <div className="space-y-3 max-h-60 overflow-y-auto pr-2">
-              {patient.appointments.map(a => (
+              {patient.appointments.map(a => {
+
+                  console.log('APPOINTMENT = ', a);
+
+                  return (
                 <div key={a.id} className="border-2 border-slate-100 p-3 rounded-xl bg-white flex justify-between items-start hover:border-[#C55C6F]/50 transition-all group">
                   <div>
-                    <p className="font-bold text-[#771126]">{new Date(a.appointment_date).toLocaleString('th-TH')}</p>
+                    <p className="font-bold text-[#771126]">
+                      {a.appointment_date
+                        ? new Date(a.appointment_date).toLocaleString('th-TH', {
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                          })
+                        : 'ไม่มีวันที่'}
+                    </p>
                     <p className="text-sm text-slate-500 font-medium">{a.note || 'ไม่มีหมายเหตุ'}</p>
                   </div>
                   <button onClick={()=>deleteAppointment(a.id)} className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
                     <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
-              ))}
+                );
+            })}
             </div>
           </div>
 

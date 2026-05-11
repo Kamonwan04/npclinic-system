@@ -116,8 +116,8 @@ function CalendarPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           patient_id: selectedPatient,
-          appointment_date: start.toISOString(),
-          end_date: end.toISOString(),
+          aappointment_date: start,
+          end_date: end,
           note: service,
           type: 'normal'
         }),
@@ -166,7 +166,9 @@ function CalendarPage() {
   // -----------------------
   const createFollowup = async () => {
 
-    await fetch(`${API}/appointments/followup-auto`, {
+  try {
+
+    const res = await fetch(`${API}/appointments/followup-auto`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -175,16 +177,35 @@ function CalendarPage() {
       })
     });
 
+    const data = await res.json();
+
+    if (data.error) {
+      return alert(data.error);
+    }
+
+    alert('✅ สร้างนัดติดตามแล้ว');
+
     setSelectedEvent(null);
+
     fetchData();
-  };
+
+  } catch (err) {
+
+    console.error(err);
+
+    alert('❌ สร้างนัดไม่สำเร็จ');
+
+  }
+};
 
   // -----------------------
   // 🔍 FILTER คนไข้
   // -----------------------
   const filteredPatients = patients.filter(p =>
-    p.name.toLowerCase().includes(patientSearch.toLowerCase())
-  );
+  `${p.name || ''} ${p.lastname || ''}`
+    .toLowerCase()
+    .includes(patientSearch.toLowerCase())
+);
 
   return (
     <div className="space-y-6">
@@ -254,7 +275,7 @@ function CalendarPage() {
                   key={p.id}
                   onClick={()=>{
                     setSelectedPatient(p.id);
-                    setPatientSearch(p.name);
+                    setPatientSearch(`${p.name} ${p.lastname || ''}`);
                     setShowDropdown(false);
                   }}
                   className="p-3 hover:bg-[#F5EDEC] hover:text-[#771126] rounded-lg cursor-pointer font-bold text-[#303030] transition-colors"
