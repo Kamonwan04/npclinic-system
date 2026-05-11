@@ -12,7 +12,7 @@ import {
   Users
 } from 'lucide-react';
 
-const API = 'http://localhost:3001';
+const API = 'npclinic-system-production.up.railway.app '; // เปลี่ยนเป็น URL ของ backend ที่ deploy แล้ว
 
 function CalendarPage() {
 
