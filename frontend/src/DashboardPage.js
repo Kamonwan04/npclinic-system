@@ -6,7 +6,7 @@ import {
   Stethoscope, CircleDollarSign, Save
 } from 'lucide-react';
 
-const API = 'npclinic-system-production.up.railway.app '; // เปลี่ยนเป็น URL ของ backend ที่ deploy แล้ว
+const API = 'https://npclinic-system-production.up.railway.app'; // เปลี่ยนเป็น URL ของ backend ที่ deploy แล้ว
 
 function DashboardPage() {
   const [sales, setSales] = useState({ daily: 0, monthly: 0, yearly: 0 });

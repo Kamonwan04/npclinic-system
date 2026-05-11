@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-const API = 'npclinic-system-production.up.railway.app '; // เปลี่ยนเป็น URL ของ backend ที่ deploy แล้ว
+const API = 'https://npclinic-system-production.up.railway.app'; // เปลี่ยนเป็น URL ของ backend ที่ deploy แล้ว
 
 function LoginPage() {
   const [username, setUsername] = useState('');
