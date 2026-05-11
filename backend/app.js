@@ -5,7 +5,7 @@ const db = require('./db');
 
 const app = express();
 
-aapp.use(cors({
+app.use(cors({
   origin: '*'
 }));
 app.use(express.json({ limit: '50mb' }));
