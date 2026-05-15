@@ -2,8 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 // Import ไอคอนจาก lucide-react
-import { 
-  Crown, 
+import {  
   Wallet, 
   CheckCircle, 
   Save, 
@@ -12,7 +11,7 @@ import {
   Trash2 
 } from 'lucide-react';
 
-const API = 'https://npclinic-system-production.up.railway.app'; // เปลี่ยนเป็น URL ของ backend ที่ deploy แล้ว
+const API = 'http://localhost:3001'; 
 
 function ManagerDashboardPage() {
   const navigate = useNavigate();
@@ -157,6 +156,7 @@ function ManagerDashboardPage() {
       alert('[ระบบขัดข้อง] ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้');
     }
   };
+  
 
   const formatMoney = (num) => {
     return Number(num || 0).toLocaleString('th-TH', {
@@ -168,11 +168,14 @@ function ManagerDashboardPage() {
   return (
     <div className="min-h-screen pb-12 pt-6 px-4 md:px-10 space-y-8 bg-slate-50 text-slate-800 font-sans selection:bg-slate-300">
       
-      {/* PAGE TITLE */}
-      <div className="flex items-center gap-3 mb-6 border-b-2 border-slate-300 pb-4">
-        <h1 className="text-3xl md:text-4xl font-black text-slate-800 tracking-tight flex items-center gap-3">
-          <Crown className="w-10 h-10 text-amber-500" /> Manager Portal <span className="text-slate-400 font-medium text-2xl">| Doctor DF Report</span>
-        </h1>
+      {/* PAGE TITLE WITH LOGO */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 border-b-2 border-slate-300 pb-4">
+        <div className="flex items-center gap-4">
+          <img src="/logo.png" alt="NP Clinic Logo" className="w-14 h-14 md:w-16 md:h-16 object-contain" />
+          <h1 className="text-3xl md:text-4xl font-black text-slate-800 tracking-tight flex items-center gap-3">
+          Manager Portal
+          </h1>
+        </div>
       </div>
 
       {/* HEADER CARD */}
@@ -389,10 +392,8 @@ function ManagerDashboardPage() {
           {data.map((d, index) => (
             <div key={index} className="bg-slate-50 border-2 border-slate-300 rounded-3xl p-6 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group">
               
-              {/* แถบสีตกแต่งด้านซ้าย */}
               <div className="absolute left-0 top-0 bottom-0 w-3 bg-slate-800 group-hover:bg-indigo-600 transition-colors"></div>
               
-              {/* HEADER ROW */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 pb-4 border-b-2 border-slate-200 pl-6">
                 <div>
                   <p className="text-xs uppercase tracking-wider text-slate-500 font-bold mb-1">ชื่อแพทย์</p>
@@ -412,7 +413,6 @@ function ManagerDashboardPage() {
                 </div>
               </div>
 
-              {/* รายการ */}
               <div className="overflow-x-auto mb-6 bg-white rounded-2xl p-5 border-2 border-slate-200 ml-4">
                 <table className="w-full">
                   <thead className="text-sm text-slate-500 border-b-2 border-slate-200 uppercase tracking-wider">
@@ -442,7 +442,6 @@ function ManagerDashboardPage() {
                 </table>
               </div>
 
-              {/* SUMMARY FOOTER */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 ml-4">
                 <div className="bg-white p-5 rounded-2xl border-2 border-slate-200 shadow-sm">
                   <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">รวมยอดขาย</p>

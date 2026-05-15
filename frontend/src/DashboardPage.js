@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  LayoutDashboard, Wallet, CalendarDays, TrendingUp, 
+  Wallet, CalendarDays, TrendingUp, 
   Users, CalendarClock, ClipboardList, BellRing, 
   PhoneCall, ListTodo, Coffee, Clock, 
   Stethoscope, CircleDollarSign, Save
 } from 'lucide-react';
 
-const API = 'https://npclinic-system-production.up.railway.app'; // เปลี่ยนเป็น URL ของ backend ที่ deploy แล้ว
+//const API = 'https://npclinic-system-production.up.railway.app'; // เปลี่ยนเป็น URL ของ backend ที่ deploy แล้ว
+const API = 'http://localhost:3001'; // สำหรับการพัฒนาในเครื่อง
 
 function DashboardPage() {
   const [sales, setSales] = useState({ daily: 0, monthly: 0, yearly: 0 });
@@ -120,8 +121,7 @@ function DashboardPage() {
     <div className="space-y-8 pb-10">
 
       <h1 className="text-3xl font-extrabold text-slate-800 border-b-2 border-slate-300 pb-3 flex items-center gap-3">
-        <LayoutDashboard className="w-8 h-8 text-slate-700" strokeWidth={2.5} />
-        Dashboard คลินิก
+        Dashboard
       </h1>
 
       {/* 💰 SALES */}

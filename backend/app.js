@@ -1,6 +1,6 @@
 const express = require('express');
-
 const cors = require('cors');
+const path = require('path'); // เพิ่มสำหรับการจัดการไฟล์โลโก้
 const db = require('./db'); 
 
 const app = express();
@@ -10,6 +10,9 @@ app.use(cors({
 }));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
+
+// เปิดให้หน้าบ้าน (Frontend) เข้าถึงไฟล์รูปโลโก้ได้ (สร้างโฟลเดอร์ public และนำ logo.png ไปใส่ไว้ข้างใน)
+app.use('/public', express.static(path.join(__dirname, 'public')));
 
 /// ------------------------------------
 // 🔐 LOGIN
@@ -218,7 +221,6 @@ app.post('/doctor-income', async (req, res) => {
   }
 
 });
-
 // ------------------------------------
 // 📊 SALES
 // ------------------------------------
