@@ -6,6 +6,7 @@ import FollowUpPage from './FollowUpPage';
 import PatientProfilePage from './PatientProfilePage'; 
 import LoginPage from './LoginPage';
 import ManagerDashboardPage from './pages/ManagerDashboardPage';
+import InventoryPage from './pages/InventoryPage';
 
 // Import ไอคอนจาก lucide-react
 import { 
@@ -148,8 +149,9 @@ function App() {
     navigate('/login');
   };
 
+  // แก้ไขพื้นหลังเป็น #efc3c2 ตรงนี้
   return (
-    <div className="min-h-screen bg-[#FCECF0] py-8 px-4 md:px-8 text-[#303030] font-sans selection:bg-[#e9b9c5] selection:text-[#501012]">
+    <div className="min-h-screen bg-[#efc3c2] py-8 px-4 md:px-8 text-[#303030] font-sans selection:bg-[#e9b9c5] selection:text-[#501012]">
       <Routes>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/*" element={
@@ -177,6 +179,7 @@ function App() {
                   <NavLink to="/patients">ลูกค้า</NavLink>
                   <NavLink to="/calendar">นัดหมาย</NavLink>
                   <NavLink to="/followup">ติดตามผล</NavLink>
+                  <NavLink to="/inventory">คลังสินค้า</NavLink>
                   {localStorage.getItem('role') === 'manager' && (
                     <NavLink to="/manager" className="!text-[#78A5CE] hover:!bg-[#F5EDEC]">ค่ามือหมอ</NavLink>
                   )}
@@ -322,6 +325,7 @@ function App() {
                   <Route path="/followup/:id" element={<FollowUpPage />} />
                   <Route path="/manager" element={localStorage.getItem('role') === 'manager' ? <ManagerDashboardPage /> : <Navigate to="/" />} />
                   <Route path="*" element={<Navigate to="/" />} />
+                  <Route path="/inventory" element={<InventoryPage />} />
                 </Routes>
               </div>
             </div>

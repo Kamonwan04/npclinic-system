@@ -28,6 +28,9 @@ function PatientProfilePage() {
   const [afterFiles, setAfterFiles] = useState([]);
   const [nextDate, setNextDate] = useState('');
   const [nextNote, setNextNote] = useState('');
+  const [depositAmount, setDepositAmount] = useState('');
+  const [totalAmount, setTotalAmount] = useState('');
+  const [paidAmount, setPaidAmount] = useState('');
 
   // -----------------------
   // โหลดข้อมูล
@@ -141,7 +144,16 @@ function PatientProfilePage() {
           patient_id: id,
           appointment_date: start,
           end_date: end,
-          note: nextNote
+          note: nextNote,
+
+          deposit_amount: Number(depositAmount || 0),
+          total_amount: Number(totalAmount || 0),
+          paid_amount: Number(paidAmount || 0),
+
+          payment_status:
+            Number(totalAmount || 0) <= Number(paidAmount || 0)
+              ? 'paid'
+              : 'pending'
         })
       });
 
@@ -220,7 +232,7 @@ function PatientProfilePage() {
           {/* สร้างนัด */}
           <div className="bg-white p-6 rounded-2xl border-2 border-[#303030] shadow-sm">
             <h3 className="font-extrabold mb-4 text-xl text-[#771126] flex items-center gap-2">
-              <CalendarPlus className="w-6 h-6" /> สร้างนัดครั้งถัดไป
+              <CalendarPlus className="w-6 h-6" /> สร้างนัดหมาย
             </h3>
 
             <input
@@ -235,6 +247,29 @@ function PatientProfilePage() {
               value={nextNote}
               onChange={e=>setNextNote(e.target.value)}
               className="border border-slate-300 p-3 w-full rounded-xl mb-4 focus:outline-none focus:border-[#C55C6F] focus:ring-1 focus:ring-[#C55C6F] transition-all font-medium text-[#303030]"
+            />
+            <input
+              type="number"
+              placeholder="ยอดมัดจำ"
+              value={depositAmount}
+              onChange={(e) => setDepositAmount(e.target.value)}
+              className="border border-slate-300 p-3 w-full rounded-xl mb-3"
+            />
+
+            <input
+              type="number"
+              placeholder="ยอดทั้งหมด"
+              value={totalAmount}
+              onChange={(e) => setTotalAmount(e.target.value)}
+              className="border border-slate-300 p-3 w-full rounded-xl mb-3"
+            />
+
+            <input
+              type="number"
+              placeholder="ยอดที่จ่ายแล้ว"
+              value={paidAmount}
+              onChange={(e) => setPaidAmount(e.target.value)}
+              className="border border-slate-300 p-3 w-full rounded-xl mb-3"
             />
 
             <button
@@ -273,6 +308,24 @@ function PatientProfilePage() {
                         : 'ไม่มีวันที่'}
                     </p>
                     <p className="text-sm text-slate-500 font-medium">{a.note || 'ไม่มีหมายเหตุ'}</p>
+                    <p className="text-sm text-emerald-600 font-bold">
+                      มัดจำ: ฿{Number(a.deposit_amount || 0).toLocaleString()}
+                    </p>
+
+                    <p className="text-sm text-blue-600 font-bold">
+                      จ่ายแล้ว: ฿{Number(a.paid_amount || 0).toLocaleString()}
+                    </p>
+
+                    <p className="text-sm text-rose-600 font-bold">
+                      ค้างชำระ: ฿{Number(a.remaining_amount || 0).toLocaleString()}
+                    </p>
+
+                    <p className="text-xs text-slate-400">
+                      วันที่มัดจำ:
+                      {a.deposit_date
+                        ? new Date(a.deposit_date).toLocaleString('th-TH')
+                        : '-'}
+                    </p>
                   </div>
                   <button onClick={()=>deleteAppointment(a.id)} className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
                     <Trash2 className="w-4 h-4" />

@@ -421,7 +421,16 @@ app.get('/patients/:id', async (req, res) => {
       end_date: a.end_date,
       note: a.note,
       type: a.type,
-      followup_status: a.followup_status
+      followup_status: a.followup_status,
+
+      deposit_amount: a.deposit_amount,
+      total_amount: a.total_amount,
+      paid_amount: a.paid_amount,
+      payment_status: a.payment_status,
+
+      remaining_amount:
+        Number(a.total_amount || 0) -
+        Number(a.paid_amount || 0)
     }))
   });
 });
@@ -525,7 +534,19 @@ app.get('/payments', async (req, res) => {
 
 // CREATE
 app.post('/appointments', async (req, res) => {
-  let { patient_id, appointment_date, end_date, note, type } = req.body;
+  let {
+  patient_id,
+  appointment_date,
+  end_date,
+  note,
+  type,
+  deposit_amount,
+  total_amount,
+  paid_amount,
+  deposit_date,
+  payment_status
+
+} = req.body;
 
   const start = new Date(appointment_date);
   const end = end_date ? new Date(end_date) : new Date(start.getTime() + 3600000);
@@ -544,11 +565,38 @@ app.post('/appointments', async (req, res) => {
   }
 
   const result = await db.query(
-    `INSERT INTO appointments 
-     (patient_id, appointment_date, end_date, note, type, followup_status) 
-     VALUES ($1,$2,$3,$4,$5,$6) RETURNING *`,
-    [patient_id, start, end, note, type || 'normal', 'pending']
-  );
+  `INSERT INTO appointments 
+   (
+     patient_id,
+     appointment_date,
+     end_date,
+     note,
+     type,
+     followup_status,
+     deposit_amount,
+     total_amount,
+     paid_amount,
+     payment_status
+   ) 
+   VALUES (
+     $1,$2,$3,$4,$5,$6,
+     $7,$8,$9,$10,$11
+   ) 
+   RETURNING *`,
+  [
+    patient_id,
+    start,
+    end,
+    note,
+    type || 'normal',
+    'pending',
+
+    deposit_amount || 0,
+    total_amount || 0,
+    paid_amount || 0,
+    payment_status || 'pending'
+  ]
+);
 
   res.json(result.rows[0]);
 });
@@ -635,6 +683,490 @@ app.post('/appointments/followup-auto', async (req, res) => {
   res.json({ success: true });
 });
 
+// ------------------------------------
+// 📦 INVENTORY
+// ------------------------------------
+
+// GET ALL
+app.get('/inventory', async (req, res) => {
+
+  try {
+
+    const result = await db.query(`
+      SELECT *
+      FROM inventory
+      ORDER BY id DESC
+    `);
+
+    res.json(result.rows);
+
+  } catch (err) {
+
+    console.error(err);
+
+    res.status(500).json({
+      error: 'โหลดสินค้าไม่สำเร็จ'
+    });
+
+  }
+
+});
+
+// CREATE
+app.post('/inventory', async (req, res) => {
+
+  try {
+
+    const {
+      product_name,
+      category,
+      stock_qty,
+      min_qty,
+      unit,
+      cost_price,
+      sell_price
+    } = req.body;
+
+    const result = await db.query(
+      `
+      INSERT INTO inventory (
+        product_name,
+        category,
+        stock_qty,
+        min_qty,
+        unit,
+        cost_price,
+        sell_price
+      )
+      VALUES ($1,$2,$3,$4,$5,$6,$7)
+      RETURNING *
+      `,
+      [
+        product_name,
+        category,
+        stock_qty,
+        min_qty,
+        unit,
+        cost_price,
+        sell_price
+      ]
+    );
+
+    res.json(result.rows[0]);
+
+  } catch (err) {
+
+    console.error(err);
+
+    res.status(500).json({
+      error: 'เพิ่มสินค้าไม่สำเร็จ'
+    });
+
+  }
+
+}); 
+
+app.post('/inventory/movement', async (req, res) => {
+
+  const client = await db.connect();
+
+  try {
+
+    const {
+      inventory_id,
+      type,
+      qty,
+      note
+    } = req.body;
+
+    await client.query('BEGIN');
+
+    // log
+    await client.query(
+      `
+      INSERT INTO inventory_logs (
+        inventory_id,
+        type,
+        qty,
+        note
+      )
+      VALUES ($1,$2,$3,$4)
+      `,
+      [
+        inventory_id,
+        type,
+        qty,
+        note
+      ]
+    );
+
+    // update stock
+    if (type === 'IN') {
+
+      await client.query(
+        `
+        UPDATE inventory
+        SET stock_qty = stock_qty + $1
+        WHERE id = $2
+        `,
+        [qty, inventory_id]
+      );
+
+    } else {
+
+      await client.query(
+        `
+        UPDATE inventory
+        SET stock_qty = stock_qty - $1
+        WHERE id = $2
+        `,
+        [qty, inventory_id]
+      );
+
+    }
+
+    await client.query('COMMIT');
+
+    res.json({
+      success: true
+    });
+
+  } catch (err) {
+
+    await client.query('ROLLBACK');
+
+    console.error(err);
+
+    res.status(500).json({
+      error: 'movement failed'
+    });
+
+  } finally {
+
+    client.release();
+
+  }
+
+});
+// ------------------------------------
+// 📦 เบิกสินค้าหลายรายการ
+// ------------------------------------
+app.post('/inventory/withdraw', async (req, res) => {
+
+  const client = await db.connect();
+
+  try {
+
+    const {
+      items,
+      note
+    } = req.body;
+
+    await client.query('BEGIN');
+
+    // movement main
+    const movementResult = await client.query(
+      `
+      INSERT INTO inventory_movements (
+        type,
+        note
+      )
+      VALUES ('OUT', $1)
+      RETURNING *
+      `,
+      [note || 'เบิกสินค้า']
+    );
+
+    const movementId =
+      movementResult.rows[0].id;
+
+    // 🔥 LOOP ITEMS
+    for (const item of items) {
+
+      // เช็ค stock
+      const stockResult = await client.query(
+        `
+        SELECT *
+        FROM inventory
+        WHERE id = $1
+        `,
+        [item.inventory_id]
+      );
+
+      const stock = stockResult.rows[0];
+
+      if (!stock) {
+        throw new Error('ไม่พบสินค้า');
+      }
+
+      if (
+        Number(stock.stock_qty) <
+        Number(item.qty)
+      ) {
+        throw new Error(
+          `${stock.product_name} stock ไม่พอ`
+        );
+      }
+
+      // save item
+      await client.query(
+        `
+        INSERT INTO inventory_movement_items (
+          movement_id,
+          inventory_id,
+          qty
+        )
+        VALUES ($1,$2,$3)
+        `,
+        [
+          movementId,
+          item.inventory_id,
+          item.qty
+        ]
+      );
+
+      // update stock
+      await client.query(
+        `
+        UPDATE inventory
+        SET stock_qty = stock_qty - $1
+        WHERE id = $2
+        `,
+        [
+          item.qty,
+          item.inventory_id
+        ]
+      );
+
+      // save log
+      await client.query(
+        `
+        INSERT INTO inventory_logs (
+          inventory_id,
+          type,
+          qty,
+          note
+        )
+        VALUES ($1,$2,$3,$4)
+        `,
+        [
+          item.inventory_id,
+          'OUT',
+          item.qty,
+          note || 'เบิกสินค้า'
+        ]
+      );
+
+    }
+
+    await client.query('COMMIT');
+
+    res.json({
+      success: true
+    });
+
+  } catch (err) {
+
+    await client.query('ROLLBACK');
+
+    console.error(err);
+
+    res.status(500).json({
+      error: err.message || 'withdraw failed'
+    });
+
+  } finally {
+
+    client.release();
+
+  }
+
+});
+
+// ------------------------------------
+// 📜 INVENTORY LOGS
+// ------------------------------------
+app.get('/inventory/history', async (req, res) => {
+
+  try {
+
+    const result = await db.query(`
+      SELECT
+        m.id,
+        m.type,
+        m.note,
+        m.created_at,
+
+        json_agg(
+          json_build_object(
+            'product_name', i.product_name,
+            'qty', mi.qty
+          )
+        ) AS items
+
+      FROM inventory_movements m
+
+      LEFT JOIN inventory_movement_items mi
+        ON m.id = mi.movement_id
+
+      LEFT JOIN inventory i
+        ON mi.inventory_id = i.id
+
+      GROUP BY m.id
+
+      ORDER BY m.created_at DESC
+    `);
+
+    res.json(result.rows);
+
+  } catch (err) {
+
+    console.error(err);
+
+    res.status(500).json({
+      error: 'history failed'
+    });
+
+  }
+
+});
+
+// ------------------------------------
+// 📦 เติมสินค้าเข้า stock
+// ------------------------------------
+app.post('/inventory/restock', async (req, res) => {
+
+  try {
+
+    const {
+      inventory_id,
+      qty,
+      note
+    } = req.body;
+
+    // update stock
+    await db.query(
+      `
+      UPDATE inventory
+      SET stock_qty = stock_qty + $1
+      WHERE id = $2
+      `,
+      [qty, inventory_id]
+    );
+
+    // log
+    await db.query(
+      `
+      INSERT INTO inventory_logs (
+        inventory_id,
+        type,
+        qty,
+        note
+      )
+      VALUES ($1,$2,$3,$4)
+      `,
+      [
+        inventory_id,
+        'IN',
+        qty,
+        note || 'เติมสินค้า'
+      ]
+    );
+
+    res.json({
+      success: true
+    });
+
+  } catch (err) {
+
+    console.error(err);
+
+    res.status(500).json({
+      error: 'restock failed'
+    });
+
+  }
+
+});
+
+// DELETE PRODUCT
+app.delete('/inventory/:id', async (req, res) => {
+
+  const client = await db.connect();
+
+  try {
+
+    const id = req.params.id;
+
+    await client.query('BEGIN');
+
+    // ลบ logs
+    await client.query(
+      `
+      DELETE FROM inventory_logs
+      WHERE inventory_id = $1
+      `,
+      [id]
+    );
+
+    // ลบ movement items
+    await client.query(
+      `
+      DELETE FROM inventory_movement_items
+      WHERE inventory_id = $1
+      `,
+      [id]
+    );
+
+    // ลบ movement ที่ไม่มี item แล้ว
+    await client.query(`
+      DELETE FROM inventory_movements
+      WHERE id NOT IN (
+        SELECT DISTINCT movement_id
+        FROM inventory_movement_items
+      )
+    `);
+
+    // ลบสินค้า
+    const result = await client.query(
+      `
+      DELETE FROM inventory
+      WHERE id = $1
+      RETURNING *
+      `,
+      [id]
+    );
+
+    await client.query('COMMIT');
+
+    if (result.rows.length === 0) {
+      return res.status(404).json({
+        error: 'ไม่พบสินค้า'
+      });
+    }
+
+    res.json({
+      success: true
+    });
+
+  } catch (err) {
+
+    await client.query('ROLLBACK');
+
+    console.error('DELETE INVENTORY ERROR:', err);
+
+    res.status(500).json({
+      error: err.message
+    });
+
+  } finally {
+
+    client.release();
+
+  }
+
+});
+
 // =============================
 // DF RECORDS
 // =============================
@@ -661,6 +1193,9 @@ app.post('/df-records', (req, res) => {
 
 });
 // ------------------------------------
+
 app.listen(3001, () => {
   console.log('✅ Server running on port 3001');
+
 });
+
