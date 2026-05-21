@@ -21,8 +21,7 @@ import {
   Frown 
 } from 'lucide-react';
 
-//const API = 'https://npclinic-system-production.up.railway.app';
-const API = 'http://localhost:3001'; 
+const API = '/api';
 
 // -----------------------
 const isLogin = () => {

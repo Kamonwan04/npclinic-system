@@ -12,8 +12,7 @@ import {
   Check
 } from 'lucide-react';
 
-//const API = 'https://npclinic-system-production.up.railway.app'; // เปลี่ยนเป็น URL ของ backend ที่ deploy แล้ว
-const API = 'http://localhost:3001'; // สำหรับการพัฒนาในเครื่อง
+const API = '/api';
 
 function FollowUpPage() {
 

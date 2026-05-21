@@ -15,7 +15,7 @@ import {
   Trash2 
 } from 'lucide-react';
 
-const API = 'http://localhost:3001'; // สำหรับการพัฒนาในเครื่อง
+const API = '/api';
 
 function PatientProfilePage() {
   const { id } = useParams();

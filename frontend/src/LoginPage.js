@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-const API = 'http://localhost:3001'; 
+const API = '/api';
 
 function LoginPage() {
   const [username, setUsername] = useState('');

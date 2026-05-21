@@ -11,7 +11,7 @@ import {
   Trash2 
 } from 'lucide-react';
 
-const API = 'http://localhost:3001'; 
+const API = '/api';
 
 function ManagerDashboardPage() {
   const navigate = useNavigate();

@@ -4,8 +4,7 @@ import { useNavigate } from 'react-router-dom';
 // Import ไอคอนจาก lucide-react
 import { Crown, Lock, Loader2 } from 'lucide-react';
 
-//const API = 'https://npclinic-system-production.up.railway.app';
-const API = 'http://localhost:3001'; 
+const API = '/api';
 
 function ManagerLoginPage() {
   const [username, setUsername] = useState('');
