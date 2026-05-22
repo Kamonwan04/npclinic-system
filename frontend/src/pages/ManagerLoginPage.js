@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 // Import ไอคอนจาก lucide-react
 import { Crown, Lock, Loader2 } from 'lucide-react';
 
-const API = '/api';
+const API = window.location.origin + '/api';
 
 function ManagerLoginPage() {
   const [username, setUsername] = useState('');
@@ -58,7 +58,7 @@ function ManagerLoginPage() {
         {/* Header ส่วนหัวพร้อมโลโก้ */}
         <div className="text-center space-y-3 pt-4">
           <div className="flex justify-center mb-4">
-            <img src="/logo.png" alt="NP Clinic Logo" className="h-20 object-contain" />
+            <img src="/public/logo.png" alt="NP Clinic Logo" className="h-20 object-contain" />
           </div>
           
           <div className="w-16 h-16 bg-slate-800 rounded-2xl flex items-center justify-center text-white shadow-lg transform rotate-3 mx-auto mb-5 border-2 border-slate-900">

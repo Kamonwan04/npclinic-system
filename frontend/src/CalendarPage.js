@@ -12,7 +12,7 @@ import {
   Users
 } from 'lucide-react';
 
-const API = '/api';
+const API = window.location.origin + '/api';
 
 function CalendarPage() {
 

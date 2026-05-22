@@ -11,7 +11,7 @@ import {
   Trash2 
 } from 'lucide-react';
 
-const API = '/api';
+const API = window.location.origin + '/api';
 
 function ManagerDashboardPage() {
   const navigate = useNavigate();
@@ -94,7 +94,7 @@ function ManagerDashboardPage() {
   const totalHR = Number(hourRate || 0) * Number(hours || 0);
 
   // [DF + HR]
-  const dfhr = totalDF + totalHR;
+  const dfhr = (totalDF || 0) + (totalHR || 0);
 
   // [หัก 3%]
   const wht = dfhr * 0.03;
@@ -171,7 +171,7 @@ function ManagerDashboardPage() {
       {/* PAGE TITLE WITH LOGO */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 border-b-2 border-slate-300 pb-4">
         <div className="flex items-center gap-4">
-          <img src="/logo.png" alt="NP Clinic Logo" className="w-14 h-14 md:w-16 md:h-16 object-contain" />
+          <img src="/public/logo.png" alt="NP Clinic Logo" className="w-14 h-14 md:w-16 md:h-16 object-contain" />
           <h1 className="text-3xl md:text-4xl font-black text-slate-800 tracking-tight flex items-center gap-3">
           Manager Portal
           </h1>

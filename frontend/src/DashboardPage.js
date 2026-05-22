@@ -6,7 +6,22 @@ import {
   Stethoscope, CircleDollarSign, Save
 } from 'lucide-react';
 
-const API = '/api';
+const API = window.location.origin + '/api';
+
+const safeJson = async (res, label = '') => {
+  try {
+    const data = await res.json();
+
+    if (!data) {
+      console.warn(label + ' returned null');
+    }
+
+    return data;
+  } catch (err) {
+    console.error('JSON error:', label, err);
+    return null;
+  }
+};
 
 function DashboardPage() {
   const [sales, setSales] = useState({ daily: 0, monthly: 0, yearly: 0 });
@@ -26,21 +41,29 @@ function DashboardPage() {
     try {
       // 💰 SALES
       const salesRes = await fetch(`${API}/sales-summary`);
-      const salesData = await salesRes.json();
-      setSales(salesData);
+      const salesData = await safeJson(salesRes, 'sales');
+
+        setSales({
+          daily: Number(salesData?.daily || 0),
+          monthly: Number(salesData?.monthly || 0),
+          yearly: Number(salesData?.yearly || 0)
+        });
 
       // 👥 PATIENTS
       const patientRes = await fetch(`${API}/patients`);
-      const patientData = await patientRes.json();
-      setPatientsCount(patientData.length);
+      const patientData = await safeJson(patientRes);
+      const patients = Array.isArray(patientData) ? patientData : [];
+
+      setPatientsCount(patients.length);
 
       // 📅 APPOINTMENTS
       const apptRes = await fetch(`${API}/appointments`);
-      const apptData = await apptRes.json();
+      const apptDataRaw = await safeJson(apptRes, 'appointments');
+      const apptData = Array.isArray(apptDataRaw) ? apptDataRaw : [];
 
       const today = new Date().toISOString().slice(0, 10);
 
-      const todayAppt = apptData.filter(a =>
+      const todayAppt = (apptData || []).filter(a =>
         a.appointment_date?.slice(0, 10) === today &&
         a.type !== 'followup'
       );
@@ -50,10 +73,12 @@ function DashboardPage() {
 
       // 🔔 FOLLOWUPS
       const followRes = await fetch(`${API}/followups`);
-      const followData = await followRes.json();
+      const followDataRaw = await safeJson(followRes, 'followups');
+      const followData = Array.isArray(followDataRaw) ? followDataRaw : [];
 
-      const todayFollow = followData.filter(f =>
-        f.appointment_date?.slice(0, 10) === today &&
+      const todayFollow = (followData || []).filter(f =>
+        f?.appointment_date &&
+        f.appointment_date.slice(0, 10) === today &&
         f.followup_status !== 'done'
       );
 
@@ -61,7 +86,8 @@ function DashboardPage() {
 
       // 🔥 โหลดยอดเงินทั้งหมด
       const payRes = await fetch(`${API}/payments`);
-      const payData = await payRes.json();
+      const payDataRaw = await safeJson(payRes, 'payments');
+      const payData = Array.isArray(payDataRaw) ? payDataRaw : [];
 
       // 🔥 รวมยอดต่อ patient
       const grouped = {};
@@ -212,7 +238,7 @@ function DashboardPage() {
         )}
 
         <div className="space-y-4">
-          {todayQueue.map(a => (
+          {(todayQueue || []).map(a => (
             <div key={a.id} className="border-2 border-slate-300 p-5 rounded-2xl flex flex-col md:flex-row justify-between md:items-center gap-5 bg-slate-50 hover:bg-white transition-colors shadow-sm">
 
               <div className="flex-1">
@@ -220,7 +246,12 @@ function DashboardPage() {
                   <p className="font-bold text-lg text-slate-800">{a.name}</p>
                   <span className="flex items-center gap-1.5 bg-white border-2 border-slate-200 text-slate-600 text-xs font-bold px-2.5 py-1 rounded-md">
                     <Clock className="w-3.5 h-3.5" />
-                    {new Date(a.appointment_date).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })}
+                    {a?.appointment_date
+                      ? new Date(a.appointment_date).toLocaleTimeString('th-TH', {
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })
+                      : '-'}
                   </span>
                 </div>
                 

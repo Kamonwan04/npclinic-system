@@ -15,7 +15,7 @@ import {
   Trash2 
 } from 'lucide-react';
 
-const API = '/api';
+const API = window.location.origin + '/api';
 
 function PatientProfilePage() {
   const { id } = useParams();

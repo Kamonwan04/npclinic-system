@@ -257,7 +257,7 @@ app.get('/sales-summary', async (req, res) => {
 // ------------------------------------
 // 👥 PATIENTS
 // ------------------------------------
-app.get('/patients', async (req, res) => {
+app.get('/api/patients', async (req, res) => {
 
   try {
 

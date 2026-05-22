@@ -14,7 +14,16 @@ import {
   Sparkles
 } from 'lucide-react';
 
-const API = '/api';
+const API = window.location.origin + '/api';
+
+const safeJson = async (res) => {
+  try {
+    return await res.json();
+  } catch (err) {
+    console.error('JSON error:', err);
+    return null;
+  }
+};
 
 function InventoryPage() {
   const [items, setItems] = useState([]);
@@ -50,16 +59,16 @@ function InventoryPage() {
   const fetchInventory = async () => {
     try {
       const res = await fetch(`${API}/inventory`);
-      const data = await res.json();
-      setItems(data);
+      const data = await safeJson(res);
+      setItems(Array.isArray(data) ? data : []);
     } catch (err) { console.error(err); }
   };
 
   const fetchHistory = async () => {
     try {
       const res = await fetch(`${API}/inventory/history`);
-      const data = await res.json();
-      setHistory(data);
+      const data = await safeJson(res);
+      setHistory(Array.isArray(data) ? data : []);
     } catch (err) { console.error(err); }
   };
 
