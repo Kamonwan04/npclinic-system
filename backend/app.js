@@ -30,7 +30,7 @@ const USERS = [
   }
 ];
 
-app.post('/login', (req, res) => {
+app.post('/api/login', (req, res) => {
 
   const { username, password } = req.body || {};
 
@@ -59,7 +59,7 @@ app.get('/', (req, res) => {
   res.send('NP PRIME CLINIC API RUNNING');
 });
 
-app.get('/doctor-income', async (req, res) => {
+app.get('/api/doctor-income', async (req, res) => {
 
   try {
 
@@ -116,7 +116,7 @@ app.get('/doctor-income', async (req, res) => {
 // 💾 SAVE DOCTOR INCOME
 // ------------------------------------
 
-app.post('/doctor-income', async (req, res) => {
+app.post('/api/doctor-income', async (req, res) => {
 
   try {
 
@@ -224,7 +224,7 @@ app.post('/doctor-income', async (req, res) => {
 // ------------------------------------
 // 📊 SALES
 // ------------------------------------
-app.get('/sales-summary', async (req, res) => {
+app.get('/api/sales-summary', async (req, res) => {
   try {
     const daily = await db.query(`
       SELECT COALESCE(SUM(amount),0) AS total
@@ -279,7 +279,7 @@ app.get('/api/patients', async (req, res) => {
 
 });
 
-app.post('/patients', async (req, res) => {
+app.post('/api/patients', async (req, res) => {
   const {
     name,
     lastname,
@@ -314,7 +314,7 @@ app.post('/patients', async (req, res) => {
   res.json(result.rows[0]);
 });
 
-app.put('/patients/:id', async (req, res) => {
+app.put('/api/patients/:id', async (req, res) => {
   const {
     name,
     lastname,
@@ -359,7 +359,7 @@ app.put('/patients/:id', async (req, res) => {
   res.json(result.rows[0]);
 });
 
-app.delete('/patients/:id', async (req, res) => {
+app.delete('/api/patients/:id', async (req, res) => {
   const id = req.params.id;
   const client = await db.connect();
 
@@ -388,7 +388,7 @@ app.delete('/patients/:id', async (req, res) => {
 // ------------------------------------
 // 🔥 PATIENT PROFILE
 // ------------------------------------
-app.get('/patients/:id', async (req, res) => {
+app.get('/api/patients/:id', async (req, res) => {
   const id = req.params.id;
 
   const patient = await db.query('SELECT * FROM patients WHERE id=$1', [id]);
@@ -438,7 +438,7 @@ app.get('/patients/:id', async (req, res) => {
 // ------------------------------------
 // 🏥 RECORDS
 // ------------------------------------
-app.post('/records', async (req, res) => {
+app.post('/api/records', async (req, res) => {
   const { patient_id, treatment, description, media } = req.body;
 
   const result = await db.query(
@@ -462,7 +462,7 @@ app.post('/records', async (req, res) => {
 // ------------------------------------
 // 📅 APPOINTMENTS
 // ------------------------------------
-app.get('/appointments', async (req, res) => {
+app.get('/api/appointments', async (req, res) => {
 
   const result = await db.query(`
     SELECT 
@@ -499,7 +499,7 @@ app.get('/appointments', async (req, res) => {
 // ------------------------------------
 // 💰 UPDATE / CREATE PAYMENT (จากคิว)
 // ------------------------------------
-app.post('/payments', async (req, res) => {
+app.post('/api/payments', async (req, res) => {
   const { appointment_id, patient_id, amount } = req.body;
 
   if (!appointment_id || !amount) {
@@ -515,7 +515,7 @@ app.post('/payments', async (req, res) => {
   res.json(result.rows[0]);
 });
 
-app.get('/payments', async (req, res) => {
+app.get('/api/payments', async (req, res) => {
   try {
 
     const result = await db.query(`
@@ -533,7 +533,7 @@ app.get('/payments', async (req, res) => {
 });
 
 // CREATE
-app.post('/appointments', async (req, res) => {
+app.post('/api/appointments', async (req, res) => {
   let {
   patient_id,
   appointment_date,
@@ -602,7 +602,7 @@ app.post('/appointments', async (req, res) => {
 });
 
 // ✅ UPDATE TIME (สำคัญมาก)
-app.put('/appointments/:id', async (req, res) => {
+app.put('/api/appointments/:id', async (req, res) => {
   const { appointment_date, end_date } = req.body;
 
   try {
@@ -621,7 +621,7 @@ app.put('/appointments/:id', async (req, res) => {
 });
 
 // ✅ MARK FOLLOWUP DONE
-app.put('/appointments/:id/followup', async (req, res) => {
+app.put('/api/appointments/:id/followup', async (req, res) => {
   const { status } = req.body;
 
   const result = await db.query(
@@ -636,7 +636,7 @@ app.put('/appointments/:id/followup', async (req, res) => {
 });
 
 // DELETE
-app.delete('/appointments/:id', async (req, res) => {
+app.delete('/api/appointments/:id', async (req, res) => {
   await db.query('DELETE FROM appointments WHERE id=$1', [req.params.id]);
   res.json({ success: true });
 });
@@ -644,7 +644,7 @@ app.delete('/appointments/:id', async (req, res) => {
 // ------------------------------------
 // 🔔 FOLLOWUPS
 // ------------------------------------
-app.get('/followups', async (req, res) => {
+app.get('/api/followups', async (req, res) => {
   const result = await db.query(`
     SELECT * FROM appointments
     WHERE type='followup'
@@ -656,7 +656,7 @@ app.get('/followups', async (req, res) => {
 // ------------------------------------
 // 🔥 FOLLOWUP AUTO
 // ------------------------------------
-app.post('/appointments/followup-auto', async (req, res) => {
+app.post('/api/appointments/followup-auto', async (req, res) => {
   let { patient_id, base_date } = req.body;
 
   if (!base_date) base_date = new Date().toISOString();
@@ -688,7 +688,7 @@ app.post('/appointments/followup-auto', async (req, res) => {
 // ------------------------------------
 
 // GET ALL
-app.get('/inventory', async (req, res) => {
+app.get('/api/inventory', async (req, res) => {
 
   try {
 
@@ -713,7 +713,7 @@ app.get('/inventory', async (req, res) => {
 });
 
 // CREATE
-app.post('/inventory', async (req, res) => {
+app.post('/api/inventory', async (req, res) => {
 
   try {
 
@@ -766,7 +766,7 @@ app.post('/inventory', async (req, res) => {
 
 }); 
 
-app.post('/inventory/movement', async (req, res) => {
+app.post('/api/inventory/movement', async (req, res) => {
 
   const client = await db.connect();
 
@@ -851,7 +851,7 @@ app.post('/inventory/movement', async (req, res) => {
 // ------------------------------------
 // 📦 เบิกสินค้าหลายรายการ
 // ------------------------------------
-app.post('/inventory/withdraw', async (req, res) => {
+app.post('/api/inventory/withdraw', async (req, res) => {
 
   const client = await db.connect();
 
@@ -986,7 +986,7 @@ app.post('/inventory/withdraw', async (req, res) => {
 // ------------------------------------
 // 📜 INVENTORY LOGS
 // ------------------------------------
-app.get('/inventory/history', async (req, res) => {
+app.get('/api/inventory/history', async (req, res) => {
 
   try {
 
@@ -1034,7 +1034,7 @@ app.get('/inventory/history', async (req, res) => {
 // ------------------------------------
 // 📦 เติมสินค้าเข้า stock
 // ------------------------------------
-app.post('/inventory/restock', async (req, res) => {
+app.post('/api/inventory/restock', async (req, res) => {
 
   try {
 
@@ -1090,7 +1090,7 @@ app.post('/inventory/restock', async (req, res) => {
 });
 
 // DELETE PRODUCT
-app.delete('/inventory/:id', async (req, res) => {
+app.delete('/api/inventory/:id', async (req, res) => {
 
   const client = await db.connect();
 
@@ -1173,11 +1173,11 @@ app.delete('/inventory/:id', async (req, res) => {
 
 let dfRecords = [];
 
-app.get('/df-records', (req, res) => {
+app.get('/api/df-records', (req, res) => {
   res.json(dfRecords);
 });
 
-app.post('/df-records', (req, res) => {
+app.post('/api/df-records', (req, res) => {
 
   const data = {
     id: Date.now(),
